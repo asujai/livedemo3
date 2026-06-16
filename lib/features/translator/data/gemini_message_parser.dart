@@ -20,8 +20,6 @@ class GeminiMessages {
           'model': 'models/$model',
           'generationConfig': {
             'responseModalities': ['AUDIO'],
-            'inputAudioTranscription': <String, dynamic>{},
-            'outputAudioTranscription': <String, dynamic>{},
             'translationConfig': {
               'targetLanguageCode': targetLanguageCode,
               'echoTargetLanguage': false,

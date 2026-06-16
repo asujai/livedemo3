@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../domain/language_option.dart';
@@ -94,12 +93,6 @@ class _TranslatorScreenState extends State<TranslatorScreen> {
             actions: [
               Center(child: ConnectionStatusBar(status: c.status)),
               const SizedBox(width: 8),
-              if (kDebugMode)
-                IconButton(
-                  tooltip: 'Add demo message',
-                  icon: const Icon(Icons.add_comment_outlined),
-                  onPressed: () => c.addMockMessage(TranslationDirection.aToB),
-                ),
               IconButton(
                 tooltip: 'Settings',
                 icon: const Icon(Icons.settings),

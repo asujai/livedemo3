@@ -51,9 +51,11 @@ class LiveTokenApi {
           .post(uri, headers: {'Content-Type': 'application/json'}, body: body)
           .timeout(timeout);
     } on TimeoutException catch (e) {
+      debugPrint('LiveTokenApi: Timeout connecting to $_baseUrl - $e');
       throw AppError.backendOffline(e);
     } catch (e) {
       // SocketException / connection refused / DNS, etc.
+      debugPrint('LiveTokenApi: Socket/Connection error connecting to $_baseUrl - $e');
       throw AppError.noInternet(e);
     }
 

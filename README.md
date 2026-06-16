@@ -10,13 +10,11 @@ Staff picks two languages and holds one of two big push-to-talk buttons:
 
 Direction is decided **only** by which button is held (no automatic detection).
 
-> **Build status — Stage 2 of 3.** Stage 1 delivered the skeleton + secure token
-> backend. Stage 2 adds the full mobile UI: language selection & picker, two
-> large push-to-talk buttons (state + haptics + mutual exclusion), live
-> conversation bubbles, local storage (SharedPreferences) and a settings screen.
-> Real microphone capture, the Gemini Live WebSocket and audio playback come in
-> Stage 3 — push-to-talk currently runs the secure token request and drives UI
-> state (the exact integration point Stage 3 plugs into).
+> **Build status — Fully Functional Live Translate.** The app connects to a secure
+> token server, requests short-lived ephemeral tokens, and opens a direct
+> bi-directional Gemini Live WebSocket using the device's microphone for real-time
+> translation and audio playback.
+
 
 ## Architecture
 
@@ -111,18 +109,30 @@ flutter test                 # includes the LiveTokenApi client test
 
 (Backend is exercised via `curl` against `/health` and `/api/live-token`.)
 
-## Known limitations (this stage)
+## Proje Durumu ve Riskler
 
-- No microphone capture, no Gemini WebSocket, no audio playback yet (those data
-  classes are stubs; push-to-talk runs the token request + UI state only).
-- Conversation history persists locally via SharedPreferences (no audio stored).
-- The translate model + `translationConfig` are Gemini **preview** features; if
-  the token-constraint validator rejects them the backend falls back to a
-  minimal lock (see backend/README.md).
+Uygulama; gerçek WebSocket bağlantısı, cihaz mikrofonundan PCM ses kaydı ve PCM ses oynatma (playback) entegrasyonuna sahip tam işlevsel bir Canlı Çeviri uygulamasıdır. 
+Kalan potansiyel riskler ve dikkat edilmesi gerekenler:
+- **Token Constraints**: Gemini Live Translate için hedef dil kısıtlaması token üzerinde kilitlenmektedir. Fallback (geri çekilme) mekanizması güvenlik ve doğru çeviri amacıyla kaldırılmıştır; API kısıtlamalarının sunucu tarafından tam olarak kabul edilmesi zorunludur.
+- **Ağ ve İzinler**: Fiziksel cihaz ile test yapılırken lokal LAN bağlantısı için gereken izinlerin verilmiş olması ve bilgisayarın LAN IP adresinin doğru yapılandırılması gereklidir.
 
-## Production notes
+## Çalıştırma Komutları
 
-- Serve the backend over **HTTPS**.
-- Add device/business auth (e.g. a PIN or device key for hotel demos) before
-  issuing tokens.
-- No accounts, no Firebase, no analytics, no ads; transcripts stay on-device.
+### 1) Android Emülatör
+Emülatörün bilgisayarınızdaki backend servisine (localhost:8787) erişebilmesi için `10.0.2.2` IP'sini kullanın:
+```bash
+flutter run --dart-define=TOKEN_SERVER_URL=http://10.0.2.2:8787
+```
+
+### 2) Fiziksel Android Cihaz (Debug/Geliştirme)
+Aynı Wi-Fi ağına bağlıyken bilgisayarınızın yerel LAN IP'sini (örn: `192.168.1.17`) kullanın:
+```bash
+flutter run -d <CIHAZ_ID> --dart-define=TOKEN_SERVER_URL=http://192.168.1.17:8787
+```
+*(Not: AndroidManifest.xml içerisinde cleartext izinleri debug ortamı için aktif edilmiştir.)*
+
+### 3) Production (Canlı Dağıtım)
+Canlı ortamda backend sunucunuzun güvenli HTTPS protokolüne sahip olması zorunludur:
+```bash
+flutter run --release --dart-define=TOKEN_SERVER_URL=https://api.yourdomain.com
+```

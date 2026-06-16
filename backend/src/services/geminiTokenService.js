@@ -36,8 +36,6 @@ function client() {
 function buildConstraintConfig(targetLanguageCode) {
   return {
     responseModalities: ['AUDIO'],
-    inputAudioTranscription: {},
-    outputAudioTranscription: {},
     translationConfig: {
       targetLanguageCode,
       echoTargetLanguage: false,
@@ -82,23 +80,11 @@ export async function createLiveToken({ targetLanguageCode }) {
       },
     });
   } catch (err) {
-    // The translate model / translationConfig are preview features; the
-    // constraints validator may reject unknown fields. Fall back to a minimal
-    // lock (model + audio response) so the demo still works. The client sends
-    // the full setup (translationConfig, transcription) at connect time.
-    console.warn(
-      '[token] Full constraint lock rejected, retrying with minimal lock:',
+    console.error(
+      '[token] Full constraint lock failed:',
       sanitize(err.message),
     );
-    token = await ai.authTokens.create({
-      config: {
-        ...baseCreate,
-        liveConnectConstraints: {
-          model: LIVE_TRANSLATE_MODEL,
-          config: { responseModalities: ['AUDIO'] },
-        },
-      },
-    });
+    throw err;
   }
 
   if (!token?.name) {

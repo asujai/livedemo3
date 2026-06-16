@@ -211,8 +211,8 @@ class TranslatorController extends ChangeNotifier {
       await _failActive(e.message);
     } catch (e) {
       if (seq != _tokenSeq) return;
-      debugPrint('startDirection error: ${e.runtimeType}');
-      await _failActive('Connection failed');
+      debugPrint('startDirection error: $e');
+      await _failActive('Connection failed: ${e.toString()}');
     }
   }
 
@@ -283,11 +283,11 @@ class TranslatorController extends ChangeNotifier {
         _teardownConnection();
       case LiveError(:final message):
         _setError(_friendly(message));
-      case LiveClosed():
+      case LiveClosed(:final code):
         if (!_intentionalClose) {
           // Unexpected drop.
           if (_activeDirection != null) {
-            _failActive('Connection failed');
+            _failActive('Connection failed: WebSocket closed with code $code');
           } else {
             _teardownConnection();
           }
@@ -302,19 +302,6 @@ class TranslatorController extends ChangeNotifier {
     if (_settings.saveHistory) await _storage.saveAll(_messages);
   }
 
-  /// Debug helper to demo the bubble UI without audio.
-  Future<void> addMockMessage(TranslationDirection dir) async {
-    final src = dir.sourceCode(languageA: _languageA.code, languageB: _languageB.code);
-    final tgt = dir.targetCode(languageA: _languageA.code, languageB: _languageB.code);
-    await addMessage(ConversationMessage(
-      timestamp: DateTime.now(),
-      direction: dir,
-      sourceLanguageCode: src,
-      targetLanguageCode: tgt,
-      inputTranscript: '[$src] demo input',
-      outputTranscript: '[$tgt] demo translation',
-    ));
-  }
 
   /// Clears only the UI/local conversation — does NOT touch the live session.
   Future<void> clearConversation() async {
@@ -490,9 +477,9 @@ class TranslatorController extends ChangeNotifier {
       seq != _tokenSeq || _activeDirection != dir;
 
   String _friendly(String message) {
+    debugPrint('Friendly raw message: $message');
     if (message.isEmpty) return 'Please try again';
-    // Keep server text short; avoid leaking technical noise.
-    return message.length > 60 ? 'Please try again' : message;
+    return message;
   }
 
   Future<void> _persistLanguages() async {

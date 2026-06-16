@@ -10,6 +10,7 @@ import 'package:tilo_translate/app.dart';
 import 'package:tilo_translate/features/translator/data/conversation_storage.dart';
 import 'package:tilo_translate/features/translator/data/live_token_api.dart';
 import 'package:tilo_translate/features/translator/presentation/translator_controller.dart';
+import 'support/fakes.dart';
 
 TranslatorController _testController() {
   final api = LiveTokenApi(
@@ -23,7 +24,13 @@ TranslatorController _testController() {
           200,
         )),
   );
-  return TranslatorController(tokenApi: api, storage: InMemoryConversationStorage());
+  return TranslatorController(
+    tokenApi: api,
+    storage: InMemoryConversationStorage(),
+    audioInput: FakeAudioInput(),
+    audioOutput: FakeAudioOutput(),
+    webSocketFactory: () => FakeWsClient(),
+  );
 }
 
 void main() {
@@ -52,18 +59,5 @@ void main() {
 
     expect(controller.languageA.code, 'en');
     expect(controller.languageB.code, 'tr');
-  });
-
-  testWidgets('debug "add demo message" shows a conversation bubble', (tester) async {
-    await tester.pumpWidget(TiloTranslateApp(controller: _testController()));
-    await tester.pumpAndSettle();
-
-    // Empty-state hint visible first.
-    expect(find.textContaining('Translated conversation appears here'), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.add_comment_outlined));
-    await tester.pumpAndSettle();
-
-    expect(find.textContaining('demo translation'), findsOneWidget);
   });
 }

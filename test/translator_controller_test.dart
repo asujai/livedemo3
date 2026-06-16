@@ -12,7 +12,9 @@ import 'package:tilo_translate/features/translator/data/live_token_api.dart';
 import 'package:tilo_translate/features/translator/domain/live_translation_session.dart';
 import 'package:tilo_translate/features/translator/domain/translation_direction.dart';
 import 'package:tilo_translate/features/translator/domain/translator_flow_state.dart';
+import 'package:tilo_translate/features/translator/domain/conversation_message.dart';
 import 'package:tilo_translate/features/translator/presentation/translator_controller.dart';
+import 'support/fakes.dart';
 
 LiveTokenApi _okTokenApi() => LiveTokenApi(
       client: MockClient((req) async => http.Response(
@@ -36,6 +38,9 @@ LiveTokenApi _failTokenApi() => LiveTokenApi(
 TranslatorController _controller({LiveTokenApi? api}) => TranslatorController(
       tokenApi: api ?? _okTokenApi(),
       storage: InMemoryConversationStorage(),
+      audioInput: FakeAudioInput(),
+      audioOutput: FakeAudioOutput(),
+      webSocketFactory: () => FakeWsClient(),
     );
 
 void main() {
@@ -55,7 +60,7 @@ void main() {
     test('swap exchanges staff and guest', () async {
       final c = _controller();
       await c.init();
-      c.swap();
+      await c.swap();
       expect(c.languageA.code, 'en');
       expect(c.languageB.code, 'tr');
     });
@@ -82,11 +87,11 @@ void main() {
   });
 
   group('push-to-talk flow', () {
-    test('startDirection obtains token and enters listeningMock', () async {
+    test('startDirection obtains token and enters listening', () async {
       final c = _controller(api: _okTokenApi());
       await c.init();
       await c.startDirection(TranslationDirection.aToB);
-      expect(c.flow, TranslatorFlowState.listeningMock);
+      expect(c.flow, TranslatorFlowState.listening);
       expect(c.status, SessionStatus.listening);
       expect(c.activeDirection, TranslationDirection.aToB);
     });
@@ -99,12 +104,12 @@ void main() {
       expect(c.canActivate(TranslationDirection.aToB), isTrue);
     });
 
-    test('stopDirection returns to idle', () async {
+    test('stopDirection returns to ready', () async {
       final c = _controller(api: _okTokenApi());
       await c.init();
       await c.startDirection(TranslationDirection.aToB);
-      c.stopDirection(TranslationDirection.aToB);
-      expect(c.flow, TranslatorFlowState.idle);
+      await c.stopDirection(TranslationDirection.aToB);
+      expect(c.flow, TranslatorFlowState.ready);
       expect(c.activeDirection, isNull);
     });
 
@@ -123,7 +128,14 @@ void main() {
     test('addMessage stores and clearConversation empties', () async {
       final c = _controller();
       await c.init();
-      await c.addMockMessage(TranslationDirection.aToB);
+      await c.addMessage(ConversationMessage(
+        timestamp: DateTime.now(),
+        direction: TranslationDirection.aToB,
+        sourceLanguageCode: 'tr',
+        targetLanguageCode: 'en',
+        inputTranscript: 'Merhaba',
+        outputTranscript: 'Hello',
+      ));
       expect(c.messages, hasLength(1));
       await c.clearConversation();
       expect(c.messages, isEmpty);
@@ -142,7 +154,7 @@ void main() {
       final c = _controller();
       await c.init();
       await c.updateSettings(tokenServerUrlOverride: '');
-      expect(AppConfig.tokenServerUrl, 'http://10.0.2.2:8787');
+      expect(AppConfig.tokenServerUrl, 'http://192.168.1.17:8787');
     });
 
     test('toggles persist', () async {

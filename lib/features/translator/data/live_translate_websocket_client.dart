@@ -101,13 +101,21 @@ class GeminiLiveWebSocketClient implements LiveTranslateWebSocketClient {
 
     final channel = WebSocketChannel.connect(uri);
     _channel = channel;
-    await channel.ready; // throws if the handshake fails
+    try {
+      await channel.ready; // throws if the handshake fails
+    } catch (e) {
+      debugPrint('LiveWS ready error: $e');
+      if (!_events.isClosed) {
+        _events.add(LiveError('Connection failed: ${e.toString()}'));
+      }
+      rethrow;
+    }
 
     _sub = channel.stream.listen(
       _onData,
       onError: (Object e, _) {
-        debugPrint('LiveWS error: ${e.runtimeType}'); // never log token
-        if (!_events.isClosed) _events.add(const LiveError('Connection failed'));
+        debugPrint('LiveWS stream error: $e'); // never log token
+        if (!_events.isClosed) _events.add(LiveError('Stream error: ${e.toString()}'));
       },
       onDone: _onDone,
       cancelOnError: false,
