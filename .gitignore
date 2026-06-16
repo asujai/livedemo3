@@ -1,0 +1,26 @@
+# ---- Secrets (defence in depth; backend has its own too) ----
+.env
+.env.*
+!.env.example
+
+# ---- Flutter / Dart ----
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+*.iml
+.idea/
+.vscode/
+
+# Generated platform folders are recreated by `flutter create .`
+# (kept out of the skeleton on purpose)
+
+# ---- Node (also ignored inside backend/) ----
+node_modules/
+*.log
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
